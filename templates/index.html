@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Análise de Vibrações</title>
+    
+    <!-- Desenvolvido por: Marlon Biagi Parangaba -->
+    <!-- Email: eng.parangaba@gmail.com -->
+    <!-- Data: Dezembro 2025 -->
+    
+    <!-- Chart.js para gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Socket.IO para comunicação em tempo real -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.min.js"></script>
+    
+    <!-- Font Awesome para ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- CSS Customizado -->
+    <link rel="stylesheet" href="/static/style.css">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    
+    <style>
+        /* Estilos adicionais para melhorar a experiência */
+        .modal-body {
+            max-height: 70vh;
+            overflow-y: auto;
+            padding-right: 15px;
+        }
+        
+        .modal-body::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .modal-body::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+        
+        .modal-body::-webkit-scrollbar-thumb {
+            background: #00b4d8;
+            border-radius: 4px;
+        }
+        
+        .notification {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            z-index: 9999;
+        }
+        
+        .chart-tooltip {
+            background: rgba(26, 26, 46, 0.95) !important;
+            border: 1px solid #00b4d8 !important;
+            border-radius: 6px !important;
+            padding: 10px !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Cabeçalho -->
+        <div class="header">
+            <h1><i class="fas fa-chart-line"></i> Sistema de Análise de Vibrações</h1>
+            <div class="subtitle">
+                FFT 2048pts | Filtro IIR | Threshold: <span id="currentThreshold">50</span> mm/s² | Tempo Real
+            </div>
+            <div class="author">
+                Desenvolvido por: <strong>Marlon Biagi Parangaba</strong> | 
+                Email: <strong>eng.parangaba@gmail.com</strong>
+            </div>
+        </div>
+        
+        <!-- Painel de Conexão -->
+        <div class="connection-panel">
+            <div class="status">
+                <div class="status-dot" id="statusDot"></div>
+                <span id="statusText">Desconectado</span>
+            </div>
+            
+            <div class="connection-controls">
+                <select id="portSelect">
+                    <option value="">Selecione a porta COM</option>
+                </select>
+                
+                <button class="btn btn-connect" onclick="connectSerial()">
+                    <i class="fas fa-plug"></i> Conectar
+                </button>
+                
+                <button class="btn btn-disconnect" onclick="disconnectSerial()">
+                    <i class="fas fa-plug"></i> Desconectar
+                </button>
+                
+                <button class="btn btn-recalibrate" onclick="recalibrateSensors()">
+                    <i class="fas fa-sync-alt"></i> Recalibrar
+                </button>
+            </div>
+            
+            <div class="connection-info">
+                <div><i class="fas fa-microchip"></i> ESP32 Buffer: <span id="bufferStatus">0%</span></div>
+                <div><i class="fas fa-database"></i> Total PC: <span id="totalSamples">0</span> amostras</div>
+                <div><i class="fas fa-clock"></i> Coleta: <span id="collectionTime">0</span> seg</div>
+            </div>
+        </div>
+        
+        <!-- Status de Calibração -->
+        <div class="calibration-panel" id="calibrationPanel">
+            <div class="panel-title">
+                <i class="fas fa-tachometer-alt"></i> Status de Calibração
+            </div>
+            <div class="calibration-content">
+                <div>Sistema: <span id="calibrationStatus" class="not-calibrated">Não Calibrado</span></div>
+                <div>Threshold Ruído: <span id="noiseThresholdValue">50</span> mm/s²</div>
+                <div class="noise-indicator">
+                    <div>Nível de Ruído Atual: <span id="currentNoise">0.0</span> mm/s²</div>
+                    <div class="noise-bar">
+                        <div class="noise-level" id="noiseLevelBar"></div>
+                    </div>
+                    <div class="noise-labels">
+                        <span>0</span>
+                        <span id="noiseCurrentLabel">0.0</span>
+                        <span id="noiseLimit">50</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Painéis de Controle -->
+        <div class="control-panels">
+            <!-- Configurações -->
+            <div class="control-panel">
+                <div class="panel-title">
+                    <i class="fas fa-cog"></i> Configurações
+                </div>
+                <div class="panel-content">
+                    <div class="setting">
+                        <label>Eixo Principal:</label>
+                        <select id="mainAxis">
+                            <option value="x">Eixo X</option>
+                            <option value="y">Eixo Y</option>
+                            <option value="z">Eixo Z</option>
+                        </select>
+                    </div>
+                    
+                    <div class="setting">
+                        <label>Faixa FFT:</label>
+                        <select id="fftRange">
+                            <option value="10">0-10 Hz</option>
+                            <option value="25">0-25 Hz</option>
+                            <option value="50">0-50 Hz</option>
+                            <option value="100" selected>0-100 Hz</option>
+                        </select>
+                    </div>
+                    
+                    <div class="setting">
+                        <label>Motor (Hz):</label>
+                        <select id="motorFrequency">
+                            <option value="10">10 Hz</option>
+                            <option value="20" selected>20 Hz</option>
+                            <option value="30">30 Hz</option>
+                            <option value="40">40 Hz</option>
+                            <option value="50">50 Hz</option>
+                            <option value="60">60 Hz</option>
+                        </select>
+                    </div>
+                    
+                    <div class="setting">
+                        <label>Threshold (mm/s²):</label>
+                        <input type="number" id="noiseThreshold" value="50" min="10" max="200" step="5">
+                    </div>
+                    
+                    <button class="btn btn-apply" onclick="applySettings()">
+                        <i class="fas fa-check"></i> Aplicar Configurações
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Informações do Sistema -->
+            <div class="control-panel">
+                <div class="panel-title">
+                    <i class="fas fa-info-circle"></i> Informações do Sistema
+                </div>
+                <div class="panel-content">
+                    <div class="info-item">Taxa de amostragem: <span id="sampleRate">200</span> Hz</div>
+                    <div class="info-item">Tamanho FFT: <span id="fftSize">2048</span> pontos</div>
+                    <div class="info-item">Resolução: <span id="freqRes">0.0977</span> Hz/bin</div>
+                    <div class="info-item">Frequência Nyquist: <span id="nyquistFreq">100</span> Hz</div>
+                    <div class="info-item">Buffer: <span id="bufferSize">4096</span> amostras</div>
+                    <div class="info-item">Taxa de dados: <span id="dataRate">0</span> Hz</div>
+                </div>
+            </div>
+            
+            <!-- Controle de Teste -->
+            <div class="control-panel">
+                <div class="panel-title">
+                    <i class="fas fa-play-circle"></i> Controle de Teste
+                </div>
+                <div class="panel-content">
+                    <div class="test-controls">
+                        <button class="btn btn-start" onclick="startTest()" id="startTestBtn">
+                            <i class="fas fa-play"></i> Iniciar Teste
+                        </button>
+                        <button class="btn btn-pause" onclick="pauseTest()" id="pauseTestBtn" disabled>
+                            <i class="fas fa-pause"></i> Pausar
+                        </button>
+                        <button class="btn btn-stop" onclick="stopTest()" id="stopTestBtn" disabled>
+                            <i class="fas fa-stop"></i> Parar
+                        </button>
+                        <button class="btn btn-export" onclick="exportTest()" id="exportBtn" disabled>
+                            <i class="fas fa-download"></i> Exportar CSV
+                        </button>
+                    </div>
+                    
+                    <div class="test-timer">
+                        <div id="testTimer">00:00:00</div>
+                        <div class="timer-label">Duração do teste</div>
+                    </div>
+                    
+                    <div class="test-status" id="testStatus">
+                        <i class="fas fa-info-circle"></i> Teste não iniciado
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Estatísticas -->
+        <div class="stats-panel">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-wave-square"></i></div>
+                <div class="stat-label">Frequência Dominante</div>
+                <div class="stat-value" id="dominantFreq">0.0</div>
+                <div class="stat-sub">Hz (<span id="dominantRPM">0</span> RPM)</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-chart-bar"></i></div>
+                <div class="stat-label">Amplitude de Pico</div>
+                <div class="stat-value" id="peakAmplitude">0.0</div>
+                <div class="stat-sub">mm/s²</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-balance-scale"></i></div>
+                <div class="stat-label">Desbalanceamento</div>
+                <div class="stat-value" id="imbalance">0.0</div>
+                <div class="stat-sub">%</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-clock"></i></div>
+                <div class="stat-label">Tempo de Coleta</div>
+                <div class="stat-value" id="collectionTimeDisplay">0</div>
+                <div class="stat-sub">segundos</div>
+            </div>
+        </div>
+        
+        <!-- Gráficos FFT -->
+        <div class="charts-row">
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3><i class="fas fa-chart-area"></i> FFT - Mancal 1 (Eixo X)</h3>
+                    <div class="chart-info" id="peak1Info">Sem picos significativos</div>
+                </div>
+                <canvas id="fftChart1"></canvas>
+            </div>
+            
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3><i class="fas fa-chart-area"></i> FFT - Mancal 2 (Eixo X)</h3>
+                    <div class="chart-info" id="peak2Info">Sem picos significativos</div>
+                </div>
+                <canvas id="fftChart2"></canvas>
+            </div>
+        </div>
+        
+        <!-- Análise de Harmônicos -->
+        <div class="harmonics-panel">
+            <div class="panel-title">
+                <i class="fas fa-music"></i> Análise de Harmônicos
+                <span class="subtitle">(Apenas acima do threshold)</span>
+            </div>
+            <div class="harmonics-grid" id="harmonicsGrid">
+                <!-- Harmônicos serão gerados dinamicamente -->
+                <div class="no-harmonics">
+                    <i class="fas fa-info-circle"></i>
+                    Nenhum harmônico significativo detectado
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sinais Temporais -->
+        <div class="charts-row">
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3><i class="fas fa-wave-square"></i> Sinal Temporal - Mancal 1</h3>
+                    <div class="chart-info">Últimas 100 amostras (0.5s)</div>
+                </div>
+                <canvas id="timeChart1"></canvas>
+            </div>
+            
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3><i class="fas fa-wave-square"></i> Sinal Temporal - Mancal 2</h3>
+                    <div class="chart-info">Últimas 100 amostras (0.5s)</div>
+                </div>
+                <canvas id="timeChart2"></canvas>
+            </div>
+        </div>
+        
+        <!-- Valores RMS -->
+        <div class="rms-panel">
+            <div class="panel-title">
+                <i class="fas fa-calculator"></i> Valores RMS (mm/s²) - Últimas 100 amostras
+            </div>
+            <table class="rms-table">
+                <thead>
+                    <tr>
+                        <th>Eixo</th>
+                        <th class="sensor1">Mancal 1</th>
+                        <th class="sensor2">Mancal 2</th>
+                        <th>Diferença</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>X</td>
+                        <td id="rms1_x">0.0</td>
+                        <td id="rms2_x">0.0</td>
+                        <td id="diff_x">0.0</td>
+                    </tr>
+                    <tr>
+                        <td>Y</td>
+                        <td id="rms1_y">0.0</td>
+                        <td id="rms2_y">0.0</td>
+                        <td id="diff_y">0.0</td>
+                    </tr>
+                    <tr>
+                        <td>Z</td>
+                        <td id="rms1_z">0.0</td>
+                        <td id="rms2_z">0.0</td>
+                        <td id="diff_z">0.0</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Rodapé -->
+        <div class="footer">
+            <div class="footer-content">
+                <div class="footer-left">
+                    <strong>Sistema de Análise de Vibrações v2.0</strong><br>
+                    Desenvolvido por: Marlon Biagi Parangaba<br>
+                    Email: eng.parangaba@gmail.com<br>
+                    Data: Dezembro 2025
+                </div>
+                <div class="footer-right">
+                    <button class="btn btn-footer" onclick="exportAllData()">
+                        <i class="fas fa-file-export"></i> Exportar Todos os Dados
+                    </button>
+                    <button class="btn btn-footer" onclick="clearStorage()">
+                        <i class="fas fa-trash"></i> Limpar Dados
+                    </button>
+                    <button class="btn btn-footer" onclick="showAbout()">
+                        <i class="fas fa-info-circle"></i> Sobre o Sistema
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- JavaScript Principal -->
+    <script src="/static/app.js"></script>
+    
+    <!-- Modal de Sobre -->
+    <div id="aboutModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-info-circle"></i> Sobre o Sistema</h2>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <h3>Sistema de Análise de Vibrações v8.5.2</h3>
+                <p><strong>Desenvolvedor:</strong> Marlon Biagi Parangaba</p>
+                <p><strong>Email:</strong> eng.parangaba@gmail.com</p>
+                <p><strong>Data de Desenvolvimento:</strong> Dezembro 2025</p>
+                
+                <h4>Características Principais:</h4>
+                <ul>
+                    <li><strong>Alta Resolução:</strong> FFT de 2048 pontos (0.0977 Hz/bin)</li>
+                    <li><strong>Dupla Aquisição:</strong> 2 sensores MPU6050 via I2C multiplexado</li>
+                    <li><strong>Taxa de Amostragem:</strong> 200 Hz (5ms por amostra)</li>
+                    <li><strong>Processamento em Tempo Real:</strong> FFT, RMS, harmônicos, desbalanceamento</li>
+                    <li><strong>Filtro IIR:</strong> Suavização avançada de sinais</li>
+                    <li><strong>Threshold Inteligente:</strong> Eliminação de ruído adaptativa</li>
+                    <li><strong>Conversão Precisão:</strong> Hz → RPM baseada em dados reais do motor</li>
+                    <li><strong>Exportação Completa:</strong> Dados em CSV para análise posterior</li>
+                    <li><strong>Interface Moderna:</strong> Web responsiva com gráficos interativos</li>
+                </ul>
+                
+                <h4>Especificações Técnicas:</h4>
+                <ul>
+                    <li><strong>Backend:</strong> Python 3.8+ (Flask + Socket.IO + NumPy + SciPy)</li>
+                    <li><strong>Frontend:</strong> HTML5, CSS3, JavaScript (Chart.js)</li>
+                    <li><strong>Microcontrolador:</strong> ESP32 com comunicação Serial USB</li>
+                    <li><strong>Sensores:</strong> 2x MPU6050 (acelerômetro + giroscópio 3 eixos)</li>
+                    <li><strong>Protocolo:</strong> Comunicação Serial a 921600 baud</li>
+                    <li><strong>FFT:</strong> 2048 pontos, Janela de Hann, Remoção de DC</li>
+                    <li><strong>Buffer:</strong> 4096 amostras (≈20 segundos a 200Hz)</li>
+                </ul>
+                
+                <h4>Funcionalidades Avançadas:</h4>
+                <ul>
+                    <li>Detecção automática de frequência dominante</li>
+                    <li>Cálculo de harmônicos (até 6ª ordem)</li>
+                    <li>Análise de desbalanceamento entre mancais</li>
+                    <li>Monitoramento de nível de ruído em tempo real</li>
+                    <li>Gravação de testes com controle de tempo</li>
+                    <li>Exportação de dados brutos e processados</li>
+                    <li>Calibração automática dos sensores</li>
+                    <li>Interface responsiva para desktop e mobile</li>
+                </ul>
+                
+                <h4>Fatores de Conversão RPM (Dados Reais):</h4>
+                <ul>
+                    <li>10 Hz = 283 RPM (Fator: 28.3)</li>
+                    <li>20 Hz = 582.7 RPM (Fator: 29.135)</li>
+                    <li>30 Hz = 880.2 RPM (Fator: 29.34)</li>
+                    <li>40 Hz = 1176 RPM (Fator: 29.4)</li>
+                    <li>50 Hz = 1481 RPM (Fator: 29.62)</li>
+                    <li>60 Hz = 1779 RPM (Fator: 29.65)</li>
+                </ul>
+                
+                <h4>Instruções de Uso:</h4>
+                <ol>
+                    <li>Conectar o ESP32 via cabo USB ao computador</li>
+                    <li>Executar o script start.bat para iniciar o servidor</li>
+                    <li>Acessar http://localhost:5000 no navegador</li>
+                    <li>Selecionar a porta COM (geralmente COM3)</li>
+                    <li>Clicar em "Conectar" para estabelecer comunicação</li>
+                    <li>Aguardar calibração automática dos sensores</li>
+                    <li>Utilizar os controles para iniciar análise</li>
+                    <li>Configurar parâmetros conforme necessidade</li>
+                    <li>Iniciar testes e exportar dados para análise</li>
+                </ol>
+                
+                <h4>Estrutura de Arquivos:</h4>
+                <pre style="background: rgba(255,255,255,0.1); padding: 10px; border-radius: 5px; font-size: 0.9em;">
+vibration_system/
+├── app/
+│   ├── main.py            # Servidor principal
+│   ├── serial_reader.py   # Leitor serial
+│   ├── data_processor.py  # Processamento de dados
+│   └── config.py          # Configurações
+├── static/
+│   ├── app.js            # JavaScript
+│   └── style.css         # Estilos
+├── templates/
+│   └── index.html        # Interface principal
+├── data/
+│   ├── tests/            # Testes exportados
+│   └── calibrations/     # Calibrações
+├── start.bat             # Script de inicialização
+├── build.py              # Script de build
+└── requirements.txt      # Dependências</pre>
+                
+                <h4>Compatibilidade:</h4>
+                <ul>
+                    <li><strong>Sistemas Operacionais:</strong> Windows 10/11, Linux, macOS</li>
+                    <li><strong>Navegadores:</strong> Chrome 90+, Firefox 88+, Edge 90+</li>
+                    <li><strong>Python:</strong> 3.8 ou superior</li>
+                    <li><strong>Hardware:</strong> ESP32 com firmware específico</li>
+                </ul>
+                
+                <h4>Limitações Conhecidas:</h4>
+                <ul>
+                    <li>Máxima taxa de amostragem: 200 Hz por sensor</li>
+                    <li>Resolução máxima FFT: 2048 pontos</li>
+                    <li>Faixa de frequência: 0-100 Hz (Nyquist a 200Hz)</li>
+                    <li>Buffer máximo: 4096 amostras por sensor</li>
+                </ul>
+                
+                <h4>Próximas Atualizações Planejadas:</h4>
+                <ul>
+                    <li>Atualização no dimensionamento da bancada, esquadrias e encaixes perfeitos</li>
+                    <li>Análise de envelope para detecção de falhas</li>
+                    <li>Integração com bancos de dados (Zabbix + Grafana)</li>
+                    <li>Relatórios automáticos em PDF</li>
+                    <li>Análise de tendências históricas</li>
+                    <li>Alertas automáticos por email</li>
+                </ul>
+                
+                <h4>Suporte Técnico:</h4>
+                <p>Para suporte, dúvidas ou sugestões, entre em contato:</p>
+                <p><strong>Email:</strong> eng.parangaba@gmail.com</p>
+                <p><strong>Horário de Atendimento:</strong> Segunda a Sexta, 9h às 17h</p>
+                
+                <h4>Licença e Termos de Uso:</h4>
+                <p>© 2025 Marlon Biagi Parangaba. Todos os direitos reservados.</p>
+                <p>Este software foi desenvolvido para fins acadêmicos, de pesquisa e industriais.</p>
+                <p>É permitido o uso, modificação e distribuição para fins não comerciais.</p>
+                <p>Para uso comercial, entre em contato com o desenvolvedor.</p>
+                
+                <div class="copyright">
+                    <p><strong>Versão:</strong> 8.5.2</p>
+                    <p><strong>Última Atualização:</strong> Dezembro 2025</p>
+                    <p><strong>Status:</strong> Estável | Produção</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Script adicional para melhorar a experiência
+        document.addEventListener('DOMContentLoaded', function() {
+            // Atualizar informações estáticas
+            document.getElementById('fftSize').textContent = '2048';
+            document.getElementById('bufferSize').textContent = '4096';
+            document.getElementById('freqRes').textContent = '0.0977';
+            document.getElementById('sampleRate').textContent = '200';
+            document.getElementById('nyquistFreq').textContent = '100';
+            
+            // Adicionar tooltips informativos
+            const tooltips = {
+                'portSelect': 'Selecione a porta COM onde o ESP32 está conectado',
+                'mainAxis': 'Eixo principal para análise (normalmente X para vibrações horizontais)',
+                'fftRange': 'Faixa de frequência a ser mostrada nos gráficos FFT',
+                'motorFrequency': 'Frequência nominal de operação do motor',
+                'noiseThreshold': 'Valor mínimo de amplitude para considerar sinal válido',
+                'startTestBtn': 'Inicia a gravação de um novo teste',
+                'exportBtn': 'Exporta os dados do teste em formato CSV',
+                'bufferStatus': 'Percentual de uso do buffer de amostras'
+            };
+            
+            // Aplicar tooltips
+            Object.keys(tooltips).forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.title = tooltips[id];
+                }
+            });
+            
+            // Adicionar atualização periódica de dados do sistema
+            setInterval(() => {
+                const now = new Date();
+                document.getElementById('collectionTimeDisplay').textContent = 
+                    document.getElementById('collectionTime').textContent;
+                    
+                // Atualizar data rate se disponível
+                if (window.STATE && window.STATE.dataRate) {
+                    document.getElementById('dataRate').textContent = 
+                        window.STATE.dataRate.toFixed(1);
+                }
+            }, 1000);
+        });
+        
+        // Função para atualizar informações de ruído
+        function updateNoiseDisplay() {
+            const currentNoise = document.getElementById('currentNoise').textContent;
+            document.getElementById('noiseCurrentLabel').textContent = currentNoise;
+        }
+        
+        // Executar periodicamente
+        setInterval(updateNoiseDisplay, 500);
+    </script>
+</body>
+</html>

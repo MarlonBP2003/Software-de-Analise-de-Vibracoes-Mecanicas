@@ -1,0 +1,28 @@
+# Dependências do Sistema de Análise de Vibrações
+# Desenvolvido por: Marlon Biagi Parangaba
+# Email: eng.parangaba@gmail.com
+
+# Framework web
+flask==2.3.3
+flask-socketio==5.3.4
+flask-cors==4.0.0
+
+# Comunicação serial
+pyserial==3.5
+
+# Processamento numérico
+numpy==1.24.3
+scipy==1.11.4
+pandas==2.0.3  # Para manipulação de dados
+
+# WebSockets e eventos
+eventlet==0.33.3
+python-engineio==4.7.0
+python-socketio==5.9.0
+
+# Build e distribuição
+pyinstaller==5.13.0
+
+# Logging e utilitários
+colorama==0.4.6  # Para logs coloridos no Windows
+python-dotenv==1.0.0  # Para variáveis de ambiente
