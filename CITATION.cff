@@ -1,0 +1,29 @@
+cff-version: 1.2.0
+title: "Software Técnico-Científico para Aquisição, Instrumentação e Análise de Vibrações Mecânicas em Sistemas Rotativos com FFT"
+message: "Se este software for utilizado em trabalhos acadêmicos, técnicos ou científicos, cite conforme as informações abaixo."
+type: software
+
+authors:
+  - family-names: Parangaba
+    given-names: Marlon Biagi
+
+date-released: 2025-12-23
+version: "1.0"
+
+abstract: >
+  Software técnico-científico desenvolvido como parte de Trabalho de Conclusão de Curso (TCC)
+  em Engenharia Mecânica, voltado à aquisição, instrumentação e análise de vibrações mecânicas
+  em sistemas rotativos, com aplicação de técnicas de processamento de sinais no domínio da
+  frequência, incluindo FFT.
+
+identifiers:
+  - type: other
+    value: "Registro de Programa de Computador – INPI, publicado na Revista da Propriedade Intelectual (RPI) nº 2868, Seção VII – Programas de Computador, p. 29"
+
+keywords:
+  - Vibrações mecânicas
+  - Sistemas rotativos
+  - FFT
+  - Análise modal
+  - Engenharia Mecânica
+  - TCC
