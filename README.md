@@ -95,7 +95,10 @@ vibration_system/
 │   └── calibrations/      # Calibrações
 ├── start.bat              # Script de inicialização
 ├── build.py               # Script de build
-└── requirements.txt       # Dependências
+├── requirements.txt       # Dependências
+├── CITATION.cff           # BibTeX
+├── NOTICE.md              # Aviso de Registro
+└── README.md              # Instruções de uso
 ```
 
 ## 💻 Compatibilidade
