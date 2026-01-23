@@ -62,6 +62,74 @@ Engenheiro Mecânico
 
 ---
 
+## 🔬 Bancada Experimental (TCC)
+
+### Esquema do Sistema
+
+<div align="center">
+
+![Esquema da Bancada Experimental](docs/bancada_experimental.png)
+
+*Configuração da bancada experimental utilizada no desenvolvimento do TCC*
+
+</div>
+
+O sistema foi desenvolvido e validado utilizando uma bancada experimental completa, composta por:
+
+### 📊 Especificações Técnicas da Bancada
+
+| Componente | Especificação |
+|------------|---------------|
+| **Eixo** | |
+| Comprimento | 550 mm |
+| Diâmetro | 25 mm |
+| Material | Aço SAE 1045 |
+| **Mancais** | |
+| Modelo | P205 (rolamento de esferas) |
+| Quantidade | 2 unidades (mancal 1 e mancal 2) |
+| **Motor** | |
+| Fabricante | WEG |
+| Potência | 1/4 CV |
+| Tensão | 220/380V |
+| Corrente | 1,27 A |
+| Rotação | 1750 RPM |
+| **Disco Central** | |
+| Espessura | 6,65 mm |
+| Configuração | Furos periféricos para massas excêntricas |
+| **Massas Excêntricas** | |
+| Parafusos | 24 g e 29 g |
+| Porcas | 7 g |
+| Finalidade | Simulação de desbalanceamento |
+| **Estrutura** | |
+| Dimensões | 76 × 22 × 20 cm (C × L × A) |
+| Material | Perfil estrutural metálico |
+| **Instrumentação** | |
+| Sensores | 2× MPU6050 (nos mancais) |
+| Multiplexador | TCA9548A |
+| Microcontrolador | ESP32 |
+
+### 🎯 Objetivo da Bancada
+
+A bancada experimental foi projetada para:
+- **Simular condições reais** de operação de máquinas rotativas
+- **Testar cenários** de desbalanceamento através das massas excêntricas
+- **Validar o software** com dados experimentais reais
+- **Estudar o comportamento dinâmico** de sistemas rotativos
+- **Analisar vibrações** em diferentes velocidades de rotação
+
+### 🔧 Configurações de Teste
+
+O sistema permite diferentes configurações experimentais:
+
+| Configuração | Descrição | Aplicação |
+|--------------|-----------|-----------|
+| **Balanceado** | Sem massas excêntricas | Linha de base (referência) |
+| **Desbalanceamento Leve** | 1 parafuso (24g) | Análise de vibrações iniciais |
+| **Desbalanceamento Moderado** | 1 parafuso (29g) ou 2 parafusos leves | Estudos comparativos |
+| **Desbalanceamento Severo** | Múltiplas massas em posições estratégicas | Validação de limites |
+
+---
+
 ## 🖥️ Interface do Sistema
 
 ### 📸 Capturas de Tela
@@ -99,6 +167,8 @@ Engenheiro Mecânico
 *Configurações de aquisição e controle de gravação*
 
 </div>
+
+> 📷 **Nota:** Para visualizar as capturas de tela, adicione os arquivos em `docs/screenshots/`
 
 ---
 
@@ -197,13 +267,13 @@ GND -----> GND (via TCA9548A)
     │  GPIO21───┼────SDA────►│ SDA          │        │ MPU #1   │
     │  GPIO22───┼────SCL────►│ SCL          │        │          │
     │           │            │              │        │  VCC ◄───┼──3.3V
-    │   3.3V────┼───────────►│ VCC       SD6├──SDA──►│ SDA      │
-    │   GND─────┼───────────►│ GND       SC6├──SCL──►│ SCL      │
+    │   3.3V────┼───────────►│ VCC       SD6├───SDA──►│ SDA     │
+    │   GND─────┼───────────►│ GND       SC6├───SCL──►│ SCL     │
     │           │            │              │        │  GND ◄───┼──GND
-    └───────────┘            │           SD7├──SDA──►│          │
-                             │           SC7├──SCL──►│ MPU #2   │
+    └───────────┘            │           SD7├───SDA──►│         │
+                             │           SC7├───SCL──►│ MPU #2  │
                              │              │        │          │
-                             │    Canal 6/7 │        └──────────┘
+                             │     Canal 6/7 │        └──────────┘
                              └──────────────┘
 ```
 
@@ -430,36 +500,42 @@ data/
 
 ### 📖 Exemplo de Uso Completo
 
-#### Cenário: Análise de Motor Elétrico 1200 RPM
+#### Cenário: Análise de Motor WEG 1/4 CV a 1750 RPM
 
 ```
 1. Preparação:
-   ✓ Sensores instalados nos mancais dianteiro e traseiro
-   ✓ ESP32 conectado ao laptop via USB
+   ✓ Sensores instalados nos mancais 1 e 2 da bancada
+   ✓ ESP32 conectado ao laptop via USB Serial
    ✓ TCA9548A entre ESP32 e sensores
-   ✓ Motor desligado para calibração
+   ✓ Motor desligado para calibração inicial
 
 2. Inicialização:
    ✓ Execute start.bat
    ✓ Conecte na porta COM3
-   ✓ Aguarde calibração (10s)
+   ✓ Aguarde calibração automática (10s)
 
-3. Coleta de Dados:
-   ✓ Ligue o motor gradualmente até 1200 RPM
+3. Teste Balanceado (Linha de Base):
+   ✓ Ligue o motor gradualmente até 1750 RPM
    ✓ Aguarde estabilização (30s)
    ✓ Clique "Iniciar Gravação"
-   ✓ Nome: "Motor_A_1200RPM_Normal"
+   ✓ Nome: "WEG_1750RPM_Balanceado"
    ✓ Duração: 60 segundos
 
-4. Análise:
-   ✓ Frequência dominante detectada: ~20 Hz
-   ✓ Conversão: 20 Hz × 29.135 = 582.7 RPM
-   ✓ Verifique harmônicos e desbalanceamento
-   ✓ Compare leituras dos dois mancais
+4. Teste com Desbalanceamento:
+   ✓ Desligue o motor
+   ✓ Adicione 1 parafuso (24g) no disco
+   ✓ Reinicie o motor até 1750 RPM
+   ✓ Grave novo teste: "WEG_1750RPM_Desb_24g"
 
-5. Exportação:
+5. Análise Comparativa:
+   ✓ Compare espectros FFT
+   ✓ Verifique aumento em 2× freq. fundamental
+   ✓ Analise RMS dos dois mancais
+   ✓ Documente diferenças observadas
+
+6. Exportação:
    ✓ Exporte dados em CSV
-   ✓ Gere relatório em JSON
+   ✓ Gere relatórios em JSON
    ✓ Análise posterior em Python/MATLAB
 ```
 
@@ -532,6 +608,8 @@ data/
 
 ## 🔄 Fatores de Conversão Frequência → RPM (Dados Experimentais)
 
+Baseados em testes com motor WEG 1/4 CV:
+
 * 10 Hz → 283 RPM (Fator 28,3)
 * 20 Hz → 582,7 RPM (Fator 29,135)
 * 30 Hz → 880,2 RPM (Fator 29,34)
@@ -560,6 +638,7 @@ vibration_system/
 │   └── calibrations/      # Calibrações
 ├── docs/
 │   ├── Certificado_de_registro.pdf  # Certificado de Registro INPI
+│   ├── bancada_experimental.png     # Esquema da bancada
 │   ├── screenshots/                 # Capturas de tela da interface
 │   └── manual_usuario.pdf           # Manual do usuário
 ├── esp32/
@@ -688,4 +767,4 @@ Para mais detalhes sobre licenciamento, consulte o arquivo [NOTICE.md](NOTICE.md
 
 ---
 
-**Software desenvolvido no Brasil 🇧🇷**
+**Desenvolvido com 💚 no Brasil 🇧🇷**
