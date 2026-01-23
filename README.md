@@ -196,8 +196,6 @@ O sistema permite diferentes configurações experimentais:
 
 </div>
 
-> 📷 **Nota:** Para visualizar as capturas de tela, adicione os arquivos em `docs/screenshots/`
-
 ---
 
 ## 🚀 Como Usar o Software
