@@ -31,7 +31,7 @@ Este software possui **registro de programa de computador** concedido pelo Insti
 
 [![Ver Certificado](https://img.shields.io/badge/📄_Ver_Certificado-INPI-00A859?style=for-the-badge)](docs/Certificado_de_registro.pdf)
 
-[![Validar Registro](https://img.shields.io/badge/🔍_Validar-INPI-blue?style=for-the-badge)](https://gru.inpi.gov.br/pePI/servlet/ProgramaServletController)
+[![Validar Registro](https://img.shields.io/badge/🔍_Validar-INPI-blue?style=for-the-badge)](https://busca.inpi.gov.br/pePI/jsp/programas/ProgramaSearchBasico.jsp)
 
 </td>
 </tr>
@@ -48,7 +48,7 @@ Este software possui **registro de programa de computador** concedido pelo Insti
 | **Algoritmo Hash** | SHA-512 |
 | **Chefe da DIPTO** | Erica Guimarães Correa |
 
-> 💡 **Para validar a autenticidade do registro**, acesse o [Portal do INPI](https://gru.inpi.gov.br/pePI/servlet/ProgramaServletController) e consulte o processo **BR512025006741-0**.
+> 💡 **Para validar a autenticidade do registro**, acesse o [Portal de Busca do INPI](https://busca.inpi.gov.br/pePI/jsp/programas/ProgramaSearchBasico.jsp) e pesquise pelo número do processo **BR512025006741-0** ou pelo título do software.
 
 ---
 
@@ -59,6 +59,341 @@ Engenheiro Mecânico
 📧 Email: [eng.parangaba@gmail.com](mailto:eng.parangaba@gmail.com)  
 🔗 GitHub: [@marlon-parangaba](https://github.com/marlon-parangaba)  
 📅 Desenvolvimento: Dezembro de 2025
+
+---
+
+## 🚀 Como Usar o Software
+
+### 📋 Pré-requisitos
+
+**Hardware:**
+- Computador com porta USB disponível
+- ESP32 (microcontrolador)
+- 2× sensores MPU6050 (acelerômetro/giroscópio)
+- Cabo USB para conexão
+- Bancada de testes ou equipamento rotativo para análise
+
+**Software:**
+- Python 3.8 ou superior
+- Arduino IDE (para programar o ESP32)
+- Navegador web moderno (Chrome, Firefox ou Edge)
+- Sistema Operacional: Windows 10/11, Linux ou macOS
+
+---
+
+### ⚙️ Instalação e Configuração
+
+#### 1️⃣ Preparar o Ambiente Python
+
+**Windows:**
+```bash
+# Clonar o repositório
+git clone https://github.com/marlon-parangaba/Software-de-Analise-de-Vibracoes-Mecanicas.git
+cd Software-de-Analise-de-Vibracoes-Mecanicas
+
+# Instalar dependências
+pip install -r requirements.txt
+```
+
+**Linux/Mac:**
+```bash
+# Clonar o repositório
+git clone https://github.com/marlon-parangaba/Software-de-Analise-de-Vibracoes-Mecanicas.git
+cd Software-de-Analise-de-Vibracoes-Mecanicas
+
+# Instalar dependências
+pip3 install -r requirements.txt
+```
+
+#### 2️⃣ Programar o ESP32
+
+1. Abra o **Arduino IDE**
+2. Instale a biblioteca do ESP32:
+   - Vá em **Arquivo → Preferências**
+   - Em "URLs Adicionais", adicione: `https://dl.espressif.com/dl/package_esp32_index.json`
+   - Vá em **Ferramentas → Placa → Gerenciador de Placas**
+   - Procure por "ESP32" e instale
+3. Abra o arquivo: `esp32/esp_vibrational_serial.ino`
+4. Selecione a placa: **Ferramentas → Placa → ESP32 Dev Module**
+5. Selecione a porta COM correta
+6. Clique em **Upload** (→)
+7. Aguarde a conclusão do upload
+
+#### 3️⃣ Conectar o Hardware
+
+**Esquema de Conexão:**
+
+```
+ESP32          MPU6050 #1     MPU6050 #2
+-----          ----------     ----------
+3.3V    -----> VCC            VCC
+GND     -----> GND            GND
+GPIO21  -----> SDA            
+GPIO22  -----> SCL            
+GPIO19  --------------------> SDA
+GPIO23  --------------------> SCL
+```
+
+> ⚠️ **Atenção:** Verifique as conexões antes de energizar!
+
+---
+
+### ▶️ Executar o Software
+
+#### Método 1: Script Automático (Windows)
+
+1. Conecte o ESP32 ao computador via USB
+2. Dê um duplo clique no arquivo `start.bat`
+3. Uma janela de terminal será aberta
+4. Aguarde a mensagem: "Server running on http://localhost:5000"
+5. O navegador abrirá automaticamente
+
+#### Método 2: Manual (Windows/Linux/Mac)
+
+```bash
+# Navegar até a pasta do projeto
+cd Software-de-Analise-de-Vibracoes-Mecanicas
+
+# Windows
+python app/main.py
+
+# Linux/Mac
+python3 app/main.py
+```
+
+6. Abra o navegador e acesse: `http://localhost:5000`
+
+---
+
+### 🎮 Interface do Usuário
+
+#### Tela Inicial
+
+1. **Conectar ao ESP32:**
+   - Selecione a porta COM na lista suspensa (ex: COM3, COM4)
+   - Clique no botão **"Conectar"**
+   - Aguarde a mensagem "Conectado com sucesso"
+
+2. **Calibração Automática:**
+   - O sistema realiza calibração automática dos sensores
+   - Aguarde a conclusão (≈10 segundos)
+   - Mantenha o equipamento parado durante a calibração
+
+#### Configurações de Aquisição
+
+**Painel de Controle:**
+
+| Parâmetro | Descrição | Valor Padrão |
+|-----------|-----------|--------------|
+| **Taxa de Amostragem** | Frequência de coleta de dados | 200 Hz |
+| **Pontos FFT** | Resolução da análise espectral | 2048 |
+| **Limiar de Ruído** | Filtro adaptativo de ruído | Auto |
+| **Janela** | Tipo de janela para FFT | Hann |
+
+#### Monitoramento em Tempo Real
+
+**Gráficos Disponíveis:**
+
+1. **Sinal Temporal (Mancal 1 e 2)**
+   - Visualização das vibrações no domínio do tempo
+   - Eixos X, Y e Z para cada sensor
+   - Atualização em tempo real
+
+2. **Espectro de Frequência (FFT)**
+   - Análise no domínio da frequência
+   - Identificação de frequências dominantes
+   - Harmônicos até 6ª ordem
+
+3. **RMS (Root Mean Square)**
+   - Nível de vibração global
+   - Indicador de severidade
+   - Histórico temporal
+
+4. **Análise de Desbalanceamento**
+   - Comparação entre mancais
+   - Detecção de assimetrias
+   - Indicadores visuais
+
+---
+
+### 📊 Realizar Testes Experimentais
+
+#### Passo a Passo
+
+1. **Preparar o Equipamento:**
+   - Instale os sensores nos mancais do equipamento rotativo
+   - Verifique as conexões
+   - Ligue o equipamento em análise
+
+2. **Iniciar Gravação:**
+   - Clique em **"Iniciar Gravação"**
+   - Digite um nome para o teste (ex: "Motor_1200RPM")
+   - Defina a duração (segundos)
+   - Clique em **"Confirmar"**
+
+3. **Durante a Gravação:**
+   - Aguarde a conclusão
+   - Observe os gráficos em tempo real
+   - O sistema salva automaticamente
+
+4. **Após a Gravação:**
+   - Clique em **"Parar Gravação"**
+   - Os dados são salvos em `data/tests/`
+   - Arquivos gerados:
+     - `[nome_teste]_raw.csv` - Dados brutos
+     - `[nome_teste]_fft.csv` - Análise FFT
+     - `[nome_teste]_report.json` - Relatório resumido
+
+---
+
+### 📈 Análise dos Resultados
+
+#### Interpretação dos Dados
+
+**Frequência Dominante:**
+- Indica a velocidade principal de rotação
+- Compare com RPM nominal do motor
+- Variações indicam problemas
+
+**Harmônicos:**
+- 2× frequência fundamental → Desbalanceamento
+- 3× frequência fundamental → Desalinhamento
+- 6× frequência fundamental → Problemas nos rolamentos
+
+**Níveis de RMS:**
+- Baixo (< 2 mm/s) → Condição boa
+- Médio (2-7 mm/s) → Atenção
+- Alto (> 7 mm/s) → Crítico, necessita manutenção
+
+**Desbalanceamento:**
+- Diferença < 10% entre mancais → Normal
+- Diferença > 30% → Desbalanceamento significativo
+
+---
+
+### 💾 Exportação de Dados
+
+#### Formatos Disponíveis
+
+1. **CSV (Valores Separados por Vírgula)**
+   - Dados brutos de aceleração
+   - Espectro de frequência
+   - Importável em Excel, Python, MATLAB
+
+2. **JSON (Relatório Estruturado)**
+   - Metadados do teste
+   - Resumo estatístico
+   - Parâmetros de configuração
+
+#### Como Exportar
+
+1. Clique em **"Exportar Dados"**
+2. Selecione o formato desejado
+3. Escolha o destino para salvar
+4. Aguarde a conclusão
+
+**Localização dos Arquivos:**
+```
+data/
+├── tests/
+│   ├── [data_hora]_[nome_teste]_raw.csv
+│   ├── [data_hora]_[nome_teste]_fft.csv
+│   └── [data_hora]_[nome_teste]_report.json
+└── calibrations/
+    └── [data_hora]_calibration.json
+```
+
+---
+
+### 🔧 Solução de Problemas
+
+#### Problema: "Porta COM não aparece"
+
+**Soluções:**
+- Verifique se o cabo USB está conectado
+- Reinstale os drivers do ESP32
+- Tente outra porta USB
+- Verifique no Gerenciador de Dispositivos (Windows)
+
+#### Problema: "Falha na comunicação serial"
+
+**Soluções:**
+- Verifique a taxa de transmissão (921600 baud)
+- Reconecte o ESP32
+- Reinicie o software
+- Verifique se outro programa está usando a porta
+
+#### Problema: "Sensores não calibram"
+
+**Soluções:**
+- Mantenha o equipamento completamente parado
+- Aguarde o processo completo (10-15 segundos)
+- Verifique as conexões I2C
+- Reinicie o ESP32
+
+#### Problema: "Dados com muito ruído"
+
+**Soluções:**
+- Aumente o limiar de ruído nas configurações
+- Verifique as conexões dos sensores
+- Afaste de fontes de interferência eletromagnética
+- Use cabos blindados
+
+---
+
+### 📖 Exemplo de Uso Completo
+
+#### Cenário: Análise de Motor Elétrico 1200 RPM
+
+```
+1. Preparação:
+   ✓ Sensores instalados nos mancais dianteiro e traseiro
+   ✓ ESP32 conectado ao laptop
+   ✓ Motor desligado para calibração
+
+2. Inicialização:
+   ✓ Execute start.bat
+   ✓ Conecte na porta COM3
+   ✓ Aguarde calibração (10s)
+
+3. Coleta de Dados:
+   ✓ Ligue o motor gradualmente até 1200 RPM
+   ✓ Aguarde estabilização (30s)
+   ✓ Clique "Iniciar Gravação"
+   ✓ Nome: "Motor_A_1200RPM_Normal"
+   ✓ Duração: 60 segundos
+
+4. Análise:
+   ✓ Frequência dominante detectada: ~20 Hz
+   ✓ Conversão: 20 Hz × 29.135 = 582.7 RPM (esperado: 1200 RPM)
+   ✓ Ajuste do fator de conversão conforme necessário
+   ✓ Verifique harmônicos e desbalanceamento
+
+5. Exportação:
+   ✓ Exporte dados em CSV
+   ✓ Gere relatório em JSON
+   ✓ Análise posterior em Python/MATLAB
+```
+
+---
+
+### 🎓 Dicas de Uso Avançado
+
+**Otimização da Análise:**
+- Use janelas de tempo maiores para melhor resolução espectral
+- Aplique média móvel para suavizar sinais
+- Compare múltiplas medições para validar resultados
+
+**Melhores Práticas:**
+- Sempre calibre antes de cada sessão de testes
+- Mantenha registro de todas as medições
+- Documente condições operacionais (temperatura, carga, etc.)
+- Realize medições periódicas para análise de tendências
+
+**Integração com Outras Ferramentas:**
+- Importe CSV no MATLAB para análises avançadas
+- Use Python/Pandas para processamento em lote
+- Integre com sistemas de manutenção preditiva
 
 ---
 
@@ -114,20 +449,6 @@ Engenheiro Mecânico
 * 40 Hz → 1176 RPM (Fator 29,4)
 * 50 Hz → 1481 RPM (Fator 29,62)
 * 60 Hz → 1779 RPM (Fator 29,65)
-
----
-
-## ▶️ Instruções de Uso
-
-1. Conecte o ESP32 ao computador via cabo USB
-2. Suba o arquivo `esp_vibrational_serial.ino` no ESP32
-3. Execute o script `start.bat` para iniciar o servidor
-4. Acesse `http://localhost:5000` no navegador
-5. Selecione a porta COM (geralmente COM3)
-6. Clique em **Conectar** para estabelecer a comunicação
-7. Aguarde a calibração automática dos sensores
-8. Configure os parâmetros conforme a aplicação
-9. Inicie os testes e exporte os dados para análise
 
 ---
 
@@ -269,7 +590,7 @@ Este software está protegido pelas seguintes legislações:
 ## 🔗 Links Úteis
 
 * [📄 Certificado INPI Completo](docs/Certificado_de_registro.pdf)
-* [🔍 Portal INPI - Consulta de Programas](https://gru.inpi.gov.br/pePI/servlet/ProgramaServletController)
+* [🔍 Portal INPI - Busca de Programas](https://busca.inpi.gov.br/pePI/jsp/programas/ProgramaSearchBasico.jsp)
 * [📰 Revista da Propriedade Intelectual (RPI)](http://revistas.inpi.gov.br/rpi/)
 * [📖 CITATION.cff](CITATION.cff)
 * [⚖️ NOTICE.md](NOTICE.md)
