@@ -100,8 +100,6 @@ Engenheiro Mecânico
 
 </div>
 
-> 📷 **Nota:** Para visualizar as capturas de tela, adicione os arquivos em `docs/screenshots/`
-
 ---
 
 ## 🚀 Como Usar o Software
