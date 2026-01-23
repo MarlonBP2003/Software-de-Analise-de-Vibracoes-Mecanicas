@@ -2,7 +2,7 @@
 
 [![INPI Registrado](https://img.shields.io/badge/INPI-BR512025006741--0-00A859?style=for-the-badge&logo=brazil&logoColor=white)](docs/Certificado_de_registro.pdf)
 [![Python](https://img.shields.io/badge/Python-3.8+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
-[![License](https://img.shields.io/badge/License-Proprietário-red?style=for-the-badge)](LICENSE)
+[![License](https://img.shields.io/badge/License-Proprietário-red?style=for-the-badge)](NOTICE.md)
 
 Software técnico-científico para **aquisição, instrumentação e análise de vibrações mecânicas em sistemas rotativos**, com processamento em tempo real e aplicação de técnicas no domínio da frequência, incluindo **FFT**.
 
@@ -62,22 +62,67 @@ Engenheiro Mecânico
 
 ---
 
+## 🖥️ Interface do Sistema
+
+### 📸 Capturas de Tela
+
+<div align="center">
+
+**Tela Principal - Dashboard de Monitoramento**
+
+![Dashboard](docs/screenshots/dashboard.png)
+
+*Interface web responsiva com gráficos em tempo real*
+
+---
+
+**Análise Espectral - FFT**
+
+![FFT Analysis](docs/screenshots/fft_analysis.png)
+
+*Visualização do espectro de frequências com identificação de harmônicos*
+
+---
+
+**Monitoramento Temporal**
+
+![Time Domain](docs/screenshots/time_domain.png)
+
+*Sinais temporais dos sensores em ambos os mancais*
+
+---
+
+**Painel de Controle e Configurações**
+
+![Control Panel](docs/screenshots/control_panel.png)
+
+*Configurações de aquisição e controle de gravação*
+
+</div>
+
+> 📷 **Nota:** Para visualizar as capturas de tela, adicione os arquivos em `docs/screenshots/`
+
+---
+
 ## 🚀 Como Usar o Software
 
 ### 📋 Pré-requisitos
 
-**Hardware:**
-- Computador com porta USB disponível
-- ESP32 (microcontrolador)
-- 2× sensores MPU6050 (acelerômetro/giroscópio)
-- Cabo USB para conexão
-- Bancada de testes ou equipamento rotativo para análise
+#### Hardware Necessário
 
-**Software:**
-- Python 3.8 ou superior
-- Arduino IDE (para programar o ESP32)
-- Navegador web moderno (Chrome, Firefox ou Edge)
-- Sistema Operacional: Windows 10/11, Linux ou macOS
+* **Computador** com porta USB disponível
+* **Cabo USB Serial** para conexão
+* **ESP32** (microcontrolador)
+* **2× sensores MPU6050** (acelerômetro/giroscópio)
+* **Multiplexador TCA9548A** (I2C Multiplexer)
+* **Bancada de testes** ou equipamento rotativo para análise
+
+#### Software Necessário
+
+* **Python 3.8** ou superior
+* **Arduino IDE** (para programar o ESP32)
+* **Navegador web** moderno (Chrome, Firefox ou Edge)
+* **Sistema Operacional:** Windows 10/11, Linux ou macOS
 
 ---
 
@@ -124,17 +169,51 @@ pip3 install -r requirements.txt
 **Esquema de Conexão:**
 
 ```
-ESP32          MPU6050 #1     MPU6050 #2
------          ----------     ----------
-3.3V    -----> VCC            VCC
-GND     -----> GND            GND
-GPIO21  -----> SDA            
-GPIO22  -----> SCL            
-GPIO19  --------------------> SDA
-GPIO23  --------------------> SCL
+ESP32              TCA9548A           MPU6050 #1 / #2
+-----              --------           ---------------
+3.3V        -----> VCC
+GND         -----> GND
+GPIO21(SDA) -----> SDA
+GPIO22(SCL) -----> SCL
+                   
+                   SD6 (Canal 6) ---> SDA (MPU6050 #1)
+                   SC6 (Canal 6) ---> SCL (MPU6050 #1)
+                   
+                   SD7 (Canal 7) ---> SDA (MPU6050 #2)
+                   SC7 (Canal 7) ---> SCL (MPU6050 #2)
+                   
+                   VCC ------------> 3.3V (comum)
+                   GND ------------> GND (comum)
+
+MPU6050 #1 e #2:
+VCC -----> 3.3V (via TCA9548A)
+GND -----> GND (via TCA9548A)
 ```
 
-> ⚠️ **Atenção:** Verifique as conexões antes de energizar!
+**Diagrama de Conexão:**
+
+```
+        ESP32                    TCA9548A                MPU6050
+    ┌───────────┐            ┌──────────────┐
+    │           │            │              │        ┌──────────┐
+    │  GPIO21───┼────SDA────►│ SDA          │        │ MPU #1   │
+    │  GPIO22───┼────SCL────►│ SCL          │        │          │
+    │           │            │              │        │  VCC ◄───┼──3.3V
+    │   3.3V────┼───────────►│ VCC       SD6├───SDA──►│ SDA     │
+    │   GND─────┼───────────►│ GND       SC6├───SCL──►│ SCL     │
+    │           │            │              │        │  GND ◄───┼──GND
+    └───────────┘            │           SD7├───SDA──►│         │
+                             │           SC7├───SCL──►│ MPU #2  │
+                             │              │        │          │
+                             │     Canal 6/7 │        └──────────┘
+                             └──────────────┘
+```
+
+> ⚠️ **Atenção:** 
+> - O TCA9548A permite múltiplos dispositivos I2C com o mesmo endereço
+> - MPU6050 #1 conectado no canal 6 do TCA9548A
+> - MPU6050 #2 conectado no canal 7 do TCA9548A
+> - Verifique as conexões antes de energizar!
 
 ---
 
@@ -328,7 +407,8 @@ data/
 **Soluções:**
 - Mantenha o equipamento completamente parado
 - Aguarde o processo completo (10-15 segundos)
-- Verifique as conexões I2C
+- Verifique as conexões I2C no TCA9548A
+- Confirme que os MPUs estão nos canais 6 e 7
 - Reinicie o ESP32
 
 #### Problema: "Dados com muito ruído"
@@ -338,6 +418,15 @@ data/
 - Verifique as conexões dos sensores
 - Afaste de fontes de interferência eletromagnética
 - Use cabos blindados
+- Verifique o multiplexador TCA9548A
+
+#### Problema: "Apenas um sensor funciona"
+
+**Soluções:**
+- Verifique se os MPUs estão em canais diferentes (6 e 7)
+- Confirme alimentação do TCA9548A
+- Teste cada MPU individualmente
+- Verifique endereçamento I2C
 
 ---
 
@@ -348,7 +437,8 @@ data/
 ```
 1. Preparação:
    ✓ Sensores instalados nos mancais dianteiro e traseiro
-   ✓ ESP32 conectado ao laptop
+   ✓ ESP32 conectado ao laptop via USB
+   ✓ TCA9548A entre ESP32 e sensores
    ✓ Motor desligado para calibração
 
 2. Inicialização:
@@ -365,9 +455,9 @@ data/
 
 4. Análise:
    ✓ Frequência dominante detectada: ~20 Hz
-   ✓ Conversão: 20 Hz × 29.135 = 582.7 RPM (esperado: 1200 RPM)
-   ✓ Ajuste do fator de conversão conforme necessário
+   ✓ Conversão: 20 Hz × 29.135 = 582.7 RPM
    ✓ Verifique harmônicos e desbalanceamento
+   ✓ Compare leituras dos dois mancais
 
 5. Exportação:
    ✓ Exporte dados em CSV
@@ -400,7 +490,7 @@ data/
 ## 🎯 Características Principais
 
 * **Alta resolução espectral:** FFT de 2048 pontos (0,0977 Hz/bin)
-* **Dupla aquisição:** 2 sensores MPU6050 via I2C multiplexado
+* **Dupla aquisição:** 2 sensores MPU6050 via I2C multiplexado (TCA9548A)
 * **Taxa de amostragem:** 200 Hz (5 ms por amostra)
 * **Processamento em tempo real:** FFT, RMS, harmônicos e análise de desbalanceamento
 * **Filtro IIR:** suavização avançada de sinais
@@ -435,6 +525,7 @@ data/
 ### Hardware
 
 * **Microcontrolador:** ESP32 (comunicação Serial USB)
+* **Multiplexador:** TCA9548A (I2C Multiplexer 8 canais)
 * **Sensores:** 2× MPU6050 (acelerômetro e giroscópio de 3 eixos)
 * **Protocolo:** Comunicação serial a 921600 baud
 * **Buffer:** 4096 amostras (~20 s a 200 Hz)
@@ -471,6 +562,7 @@ vibration_system/
 │   └── calibrations/      # Calibrações
 ├── docs/
 │   ├── Certificado_de_registro.pdf  # Certificado de Registro INPI
+│   ├── screenshots/                 # Capturas de tela da interface
 │   └── manual_usuario.pdf           # Manual do usuário
 ├── esp32/
 │   └── esp_vibrational_serial.ino   # Firmware ESP32
@@ -479,7 +571,6 @@ vibration_system/
 ├── requirements.txt       # Dependências
 ├── CITATION.cff           # BibTeX
 ├── NOTICE.md              # Aviso de Registro
-├── LICENSE                # Licença
 └── README.md              # Este arquivo
 ```
 
@@ -490,7 +581,7 @@ vibration_system/
 * **Sistemas Operacionais:** Windows 10/11, Linux, macOS
 * **Navegadores:** Chrome 90+, Firefox 88+, Edge 90+
 * **Python:** 3.8 ou superior
-* **Hardware:** ESP32 com firmware específico
+* **Hardware:** ESP32 com firmware específico + TCA9548A + 2× MPU6050
 
 ---
 
@@ -585,6 +676,8 @@ Este software está protegido pelas seguintes legislações:
 
 **Validade do Registro:** 50 anos a partir de 01/01/2026 (até 01/01/2076)
 
+Para mais detalhes sobre licenciamento, consulte o arquivo [NOTICE.md](NOTICE.md).
+
 ---
 
 ## 🔗 Links Úteis
@@ -597,4 +690,4 @@ Este software está protegido pelas seguintes legislações:
 
 ---
 
-**Desenvolvido com 💚 no Brasil 🇧🇷**
+**Software desenvolvido no Brasil 🇧🇷**
