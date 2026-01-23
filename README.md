@@ -78,35 +78,63 @@ O sistema foi desenvolvido e validado utilizando uma bancada experimental comple
 
 ### 📊 Especificações Técnicas da Bancada
 
-| Componente | Especificação |
-|------------|---------------|
-| **Eixo** | |
+#### 🔩 Eixo Rotativo
+
+| Parâmetro | Valor |
+|-----------|-------|
 | Comprimento | 550 mm |
 | Diâmetro | 25 mm |
 | Material | Aço SAE 1045 |
-| **Mancais** | |
+
+#### ⚙️ Mancais
+
+| Parâmetro | Valor |
+|-----------|-------|
 | Modelo | P205 (rolamento de esferas) |
 | Quantidade | 2 unidades (mancal 1 e mancal 2) |
-| **Motor** | |
+| Posicionamento | Extremidades do eixo |
+
+#### ⚡ Motor
+
+| Parâmetro | Valor |
+|-----------|-------|
 | Fabricante | WEG |
 | Potência | 1/4 CV |
 | Tensão | 220/380V |
 | Corrente | 1,27 A |
-| Rotação | 1750 RPM |
-| **Disco Central** | |
+| Rotação Nominal | 1750 RPM |
+
+#### 💿 Disco Central
+
+| Parâmetro | Valor |
+|-----------|-------|
 | Espessura | 6,65 mm |
 | Configuração | Furos periféricos para massas excêntricas |
-| **Massas Excêntricas** | |
-| Parafusos | 24 g e 29 g |
-| Porcas | 7 g |
-| Finalidade | Simulação de desbalanceamento |
-| **Estrutura** | |
+| Posição | Centro do eixo |
+
+#### ⚖️ Massas Excêntricas
+
+| Componente | Massa | Finalidade |
+|------------|-------|------------|
+| Parafusos | 24 g e 29 g | Simulação de desbalanceamento |
+| Porcas | 7 g | Fixação e massa adicional |
+
+#### 🏗️ Estrutura
+
+| Parâmetro | Valor |
+|-----------|-------|
 | Dimensões | 76 × 22 × 20 cm (C × L × A) |
 | Material | Perfil estrutural metálico |
-| **Instrumentação** | |
-| Sensores | 2× MPU6050 (nos mancais) |
-| Multiplexador | TCA9548A |
+
+#### 📡 Instrumentação
+
+| Componente | Especificação |
+|------------|---------------|
+| Sensores | 2× MPU6050 (acelerômetro/giroscópio 3 eixos) |
+| Posicionamento | Mancal 1 e Mancal 2 |
+| Multiplexador | TCA9548A (I2C, canais 6 e 7) |
 | Microcontrolador | ESP32 |
+| Taxa de Amostragem | 200 Hz |
 
 ### 🎯 Objetivo da Bancada
 
