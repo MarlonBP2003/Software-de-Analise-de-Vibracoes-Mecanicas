@@ -68,7 +68,7 @@ Engenheiro Mecânico
 
 <div align="center">
 
-![Esquema da Bancada Experimental](docs/bancada_experimental.png)
+![Esquema da Bancada Experimental](docs/screenshots/bancada_experimental.png)
 
 *Configuração da bancada experimental utilizada no desenvolvimento do TCC*
 
